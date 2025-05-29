@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>KaTeX Editor</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <style>
+        body { 
+            font-family: sans-serif; 
+            padding: 20px; 
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        textarea {
+            width: 100%; 
+            padding: 10px; 
+            font-size: 24px;
+            margin-bottom: 20px; 
+            border-radius: 4px;
+            height: 200px;  /* Add this line to set minimum height */
+            min-height: 200px;  /* Ensures it can grow if needed */
+            resize: vertical;  /* Allows user to resize vertically */
+        }
+        #preview { 
+            background: #f9f9f9; 
+            width: 100%; 
+            min-height: 200px;  /* Changed from 50px to 200px */
+            border: 1px solid #ccc; 
+            padding: 15px;
+            margin-bottom: 20px; 
+            white-space: pre-wrap;
+        }
+        .expr-box { 
+            margin-bottom: 20px; 
+            padding: 10px; 
+            background: #e8f5e9; 
+            border-left: 4px solid green; 
+        }
+        .navbar {
+            display: flex;
+            background-color: #f1f1f1;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .nav-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            position: relative;
+        }
+        .nav-item:hover {
+            background-color: #ddd;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 200px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+        .nav-item:hover .dropdown-content {
+            display: block;
+        }
+        .dropdown-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .dropdown-item:hover {
+            background-color: #ddd;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .katex {
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <h1>KaTeX Editor</h1>
+
+    <div class="navbar">
+        <div class="nav-item">
+            Fractions
+            <div class="dropdown-content">
+                <div class="dropdown-item" onclick="insertTemplate('$\\frac{a}{b}$')">Simple Fraction</div>
+                <div class="dropdown-item" onclick="insertTemplate('$\\dfrac{a}{b}$')">Large Fraction</div>
+                <div class="dropdown-item" onclick="insertTemplate('$\\cfrac{a}{b}$')">Continued Fraction</div>
+            </div>
+        </div>
+        <div class="nav-item">
+            Differentiation
+            <div class="dropdown-content">
+                <div class="dropdown-item" onclick="insertTemplate('$\\frac{dy}{dx}$')">Derivative</div>
+                <div class="dropdown-item" onclick="insertTemplate('$\\frac{d^y}{dx^b}$')">n-th Derivative</div>
+                <div class="dropdown-item" onclick="insertTemplate('$\\partial_{x}$')">Partial Derivative</div>
+            </div>
+        </div>
+        <div class="nav-item">
+            Integration
+            <div class="dropdown-content">
+                <div class="dropdown-item" onclick="insertTemplate('$\\int y \\, dx$')">Indefinite Integral</div>
+                <div class="dropdown-item" onclick="insertTemplate('$\\int_{a}^{b} y \\, dx$')">Definite Integral</div>
+                <div class="dropdown-item" onclick="insertTemplate('$\\iint y \\, dx$')">Double Integral</div>
+            </div>
+        </div>
+        <div class="nav-item">
+            Logarithms
+            <div class="dropdown-content">
+                <div class="dropdown-item" onclick="insertTemplate('$\\log_{a} b$')">Logarithm with Base</div>
+                <div class="dropdown-item" onclick="insertTemplate('$\\ln(a)$')">Natural Logarithm</div>
+                <div class="dropdown-item" onclick="insertTemplate('$\\log_{10} a$')">Common Logarithm</div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+        <textarea name="content" id="latex-input" placeholder="Write text here and equations between $ signs like $\frac{a}{b}$"></textarea>
+        <div id="preview"></div>
+        <button type="submit">Save</button>
+    </form>
+
+    <hr>
+    <h2>Saved Expressions:</h2>
+    {% for expr in expressions %}
+        <div class="expr-box">
+            {{ expr.content }}
+        </div>
+    {% empty %}
+        <p>No expressions saved yet.</p>
+    {% endfor %}
+
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('latex-input');
+            const preview = document.getElementById('preview');
+
+            // Function to render mixed content (text + LaTeX)
+            function renderMixedContent(text, target) {
+                // Create a temporary div to hold our processed content
+                const tempDiv = document.createElement('div');
+                
+                // Split text into parts that are inside $...$ and outside
+                const parts = text.split(/(\$[^$]*\$)/);
+                
+                parts.forEach(part => {
+                    if (part.startsWith('$') && part.endsWith('$')) {
+                        // This is a LaTeX expression
+                        const latex = part.substring(1, part.length - 1);
+                        try {
+                            const span = document.createElement('span');
+                            katex.render(latex, span, {
+                                throwOnError: false,
+                                displayMode: false
+                            });
+                            tempDiv.appendChild(span);
+                        } catch (err) {
+                            const errorSpan = document.createElement('span');
+                            errorSpan.style.color = 'red';
+                            errorSpan.textContent = part;
+                            tempDiv.appendChild(errorSpan);
+                        }
+                    } else if (part) {
+                        // This is regular text
+                        tempDiv.appendChild(document.createTextNode(part));
+                    }
+                });
+                
+                // Clear and update the target
+                target.innerHTML = '';
+                target.appendChild(tempDiv);
+            }
+
+            // Real-time preview
+            input.addEventListener('input', () => {
+                renderMixedContent(input.value, preview);
+            });
+
+            // Render all saved expressions on page load
+            document.querySelectorAll('.expr-box').forEach(box => {
+                renderMixedContent(box.textContent, box);
+            });
+
+            // Template insertion function
+            window.insertTemplate = function(template) {
+                const cursorPos = input.selectionStart;
+                const textBefore = input.value.substring(0, cursorPos);
+                const textAfter = input.value.substring(cursorPos);
+                
+                input.value = textBefore + template + textAfter;
+                
+                // Find first placeholder position
+                const firstPlaceholder = template.indexOf('@');
+                const newCursorPos = cursorPos + (firstPlaceholder !== -1 ? firstPlaceholder : template.length);
+                
+                input.setSelectionRange(newCursorPos, newCursorPos);
+                input.focus();
+                
+                // Trigger preview update
+                const event = new Event('input');
+                input.dispatchEvent(event);
+            };
+        });
+    </script>
+</body>
+</html>
