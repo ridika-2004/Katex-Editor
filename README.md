@@ -64,6 +64,11 @@ A web-based mathematical equation editor built with Django that supports real-ti
 └── README.md               # This file
  ```
 
+## Diagram
+
+![download](https://github.com/user-attachments/assets/6a2dcee0-6094-4417-9899-155f22b242ac)
+
+
 ## Customization
 
  - Equation templates: Edit the template strings in editor.html
