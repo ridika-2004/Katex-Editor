@@ -20,34 +20,34 @@ A web-based mathematical equation editor built with Django that supports real-ti
 
 ## Installation
  Clone the repository:
- ```
+ ```console
  git clone https://github.com/ridika-2004/Katex-Editor.git
  cd katex-editor
  ```
  Create and activate a virtual environment:
- ```
+ ```console
  python -m venv venv
  source venv/bin/activate  # On Windows: venv\Scripts\activate
  ```
  Install dependencies:
- ```
+ ```console
  pip install django
  ```
  Set up the database:
- ```
+ ```console
  python manage.py migrate
  ```
  Run the development server:
- ```
+ ```console
  python manage.py runserver
  ```
  Open your browser to:
- ```
+ ```console
  http://127.0.0.1:8000/
  ```
 
 ## File Structure
- ```
+ ```console
  katex-editor/
 ├── katex_project/          # Django project files
 │   ├── settings.py         # Project settings
